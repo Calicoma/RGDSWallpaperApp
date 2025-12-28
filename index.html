@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DS Wallpaper Cropper</title>
+
+<style>
+/* ================= THEMES ================= */
+
+:root {
+  --bg: #1e1e1e;
+  --panel: #252525;
+  --text: #e0e0e0;
+  --muted: #aaa;
+  --accent: #4ea1ff;
+  --button: #2f2f2f;
+  --button-hover: #3a3a3a;
+  --border: #444;
+}
+
+[data-theme="light"] {
+  --bg: #f2f2f2;
+  --panel: #ffffff;
+  --text: #222;
+  --muted: #666;
+  --accent: #0066cc;
+  --button: #e6e6e6;
+  --button-hover: #dcdcdc;
+  --border: #ccc;
+}
+
+[data-theme="blue"] {
+  --bg: #0e1621;
+  --panel: #142033;
+  --text: #e6f0ff;
+  --muted: #9fb4d9;
+  --accent: #4ea1ff;
+  --button: #1b2a44;
+  --button-hover: #22355a;
+  --border: #2f456b;
+}
+
+[data-theme="purple"] {
+  --bg: #1a1424;
+  --panel: #241b33;
+  --text: #f0eaff;
+  --muted: #b8a7e0;
+  --accent: #9b7cff;
+  --button: #30244a;
+  --button-hover: #3a2d5c;
+  --border: #4a3a75;
+}
+
+/* New Themes */
+[data-theme="yellow"] {
+  --bg: #fff9e5;
+  --panel: #fff1b8;
+  --text: #222;
+  --muted: #555;
+  --accent: #ffb400;
+  --button: #ffd966;
+  --button-hover: #ffec99;
+  --border: #e6c200;
+}
+
+[data-theme="snes"] {
+  --bg: #3c2f41;
+  --panel: #5a4b6b;
+  --text: #e0dce6;
+  --muted: #aaa3b0;
+  --accent: #ff6fcf;
+  --button: #735f80;
+  --button-hover: #8a7498;
+  --border: #9a7bb3;
+}
+
+[data-theme="gameboy"] {
+  --bg: #9bbc0f;
+  --panel: #8bac0f;
+  --text: #0f380f;
+  --muted: #6ba06b;
+  --accent: #306230;
+  --button: #a0c020;
+  --button-hover: #b0d030;
+  --border: #618820;
+}
+
+[data-theme="retro-pink"] {
+  --bg: #2b003f;
+  --panel: #43006a;
+  --text: #ffd6f7;
+  --muted: #aa88bb;
+  --accent: #ff66cc;
+  --button: #551177;
+  --button-hover: #662299;
+  --border: #8833aa;
+}
+
+[data-theme="neon-cyber"] {
+  --bg: #0f0f0f;
+  --panel: #111111;
+  --text: #00ffea;
+  --muted: #008888;
+  --accent: #ff00ff;
+  --button: #222222;
+  --button-hover: #333333;
+  --border: #00cccc;
+}
+
+/* ================= LAYOUT ================= */
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  display: flex;
+  height: 100vh;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.canvas-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls {
+  width: 300px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+canvas {
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid var(--border);
+  cursor: grab;
+  background: black;
+}
+
+canvas:active { cursor: grabbing; }
+
+/* ================= CONTROLS ================= */
+
+.section {
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+button,
+select,
+input[type="file"],
+input[type="range"],
+input[type="text"] {
+  font: inherit;
+}
+
+button,
+select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--button);
+  color: var(--text);
+  cursor: pointer;
+}
+
+button:hover { background: var(--button-hover); }
+
+button.primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+}
+
+button.primary:hover { filter: brightness(1.1); }
+
+input[type="range"], input[type="text"] {
+  width: 100%;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+
+/* ================= GRID LAYOUTS ================= */
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.snap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.snap-grid .empty {
+  visibility: hidden;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="canvas-wrapper">
+  <canvas id="canvas" width="640" height="1160"></canvas>
+</div>
+
+<div class="controls">
+
+  <div class="section">
+    <div class="section-title">Image</div>
+    <input type="file" id="fileInput" accept="image/*">
+    <p style="font-size:0.8em;color:var(--muted)">Or drag and drop an image onto the canvas</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Transform</div>
+    <label><input type="checkbox" checked> Maintain aspect ratio</label>
+    <input type="range" id="scaleSlider" min="0.05" max="5" step="0.01">
+    <div class="grid-2">
+      <button onclick="scaleToWidth()">Width</button>
+      <button onclick="scaleToHeight()">Height</button>
+      <button onclick="scaleToCover()">Cover</button>
+      <div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Snap</div>
+    <div class="snap-grid">
+      <div class="empty"></div>
+      <button onclick="snapTop()">↑</button>
+      <div class="empty"></div>
+
+      <button onclick="snapLeft()">←</button>
+      <button onclick="snapCenter()">●</button>
+      <button onclick="snapRight()">→</button>
+
+      <div class="empty"></div>
+      <button onclick="snapBottom()">↓</button>
+      <div class="empty"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Preview</div>
+    <select id="bgSelect">
+      <option value="black">Black Background</option>
+      <option value="white">White Background</option>
+      <option value="transparent">Transparent</option>
+    </select>
+    <select id="themeSelect">
+      <option value="dark">Dark Theme</option>
+      <option value="light">Light Theme</option>
+      <option value="blue">Blue Theme</option>
+      <option value="purple">Purple Theme</option>
+      <option value="yellow">Yellow Theme</option>
+      <option value="snes">SNES Style</option>
+      <option value="gameboy">Gameboy Style</option>
+      <option value="retro-pink">Retro Pink</option>
+      <option value="neon-cyber">Neon Cyber</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Options</div>
+    <label>
+      <input type="checkbox" id="blurFillCheckbox">
+      Enable blurred background fill
+    </label>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-title">Filename Prefix</div>
+    <input type="text" id="filenamePrefix" placeholder="Enter prefix">
+  </div>
+
+  <button class="primary" onclick="exportImages()">Export PNGs</button>
+
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const TOP_H = 480, GAP_H = 200, BOTTOM_Y = TOP_H + GAP_H;
+const SNAP_DISTANCE = 10, MAGNET_STRENGTH = 0.25;
+
+let img = null, scale = 1, posX = canvas.width/2, posY = canvas.height/2;
+let dragging = false, lastX=0,lastY=0, bgMode="black";
+
+const scaleSlider = document.getElementById("scaleSlider");
+
+// ---------------- Canvas drawing ----------------
+function drawBackground() {
+  if(bgMode==="transparent"){
+    const s=16;
+    for(let y=0;y<canvas.height;y+=s)
+      for(let x=0;x<canvas.width;x+=s){
+        ctx.fillStyle=(x/s+y/s)%2 ? "#555":"#333";
+        ctx.fillRect(x,y,s,s);
+      }
+  } else { ctx.fillStyle=bgMode; ctx.fillRect(0,0,canvas.width,canvas.height); }
+}
+
+function draw() {
+  drawBackground();
+
+  if(img){
+    const w=img.width*scale, h=img.height*scale;
+    const blurEnabled = document.getElementById("blurFillCheckbox").checked;
+
+    if(blurEnabled && (w < canvas.width || h < canvas.height)){
+      ctx.save();
+      ctx.filter = "blur(20px)";
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    ctx.drawImage(img, posX-w/2, posY-h/2, w, h);
+  }
+
+  ctx.strokeStyle="red"; ctx.lineWidth=2;
+  ctx.strokeRect(0,0,640,480);
+  ctx.strokeRect(0,BOTTOM_Y,640,480);
+}
+
+// ---------------- Image import ----------------
+function loadImageFile(file){
+  if(!file || !file.type.startsWith("image/")) return;
+  const image = new Image();
+  image.onload = ()=>{
+    img=image;
+    scale=Math.max(canvas.width/img.width,canvas.height/img.height);
+    scaleSlider.value=scale;
+    posX=canvas.width/2;
+    posY=canvas.height/2;
+    draw();
+  };
+  image.src = URL.createObjectURL(file);
+}
+
+document.getElementById("fileInput").addEventListener("change", e=>{
+  loadImageFile(e.target.files[0]);
+});
+
+// ---------------- Drag & Drop ----------------
+canvas.addEventListener("dragover", e => {
+  e.preventDefault();
+  canvas.style.border = "2px dashed var(--accent)";
+});
+canvas.addEventListener("dragleave", e => {
+  canvas.style.border = "1px solid var(--border)";
+});
+canvas.addEventListener("drop", e => {
+  e.preventDefault();
+  canvas.style.border = "1px solid var(--border)";
+  loadImageFile(e.dataTransfer.files[0]);
+});
+
+// ---------------- Drag / Zoom ----------------
+canvas.addEventListener("mousedown", e=>{ dragging=true; lastX=e.offsetX; lastY=e.offsetY; });
+canvas.addEventListener("mousemove", e=>{ 
+  if(!dragging) return; 
+  posX+=e.offsetX-lastX; posY+=e.offsetY-lastY; 
+  lastX=e.offsetX; lastY=e.offsetY; applyEdgeSnapping(); draw();
+});
+["mouseup","mouseleave"].forEach(evt=>canvas.addEventListener(evt,()=>dragging=false));
+canvas.addEventListener("wheel", e=>{ e.preventDefault(); scale*=(e.deltaY<0?1.05:0.95); scaleSlider.value=scale; draw(); });
+scaleSlider.addEventListener("input", ()=>{ scale=parseFloat(scaleSlider.value); draw(); });
+
+// ---------------- Helpers ----------------
+function applyEdgeSnapping(){
+  if(!img) return;
+  const w=img.width*scale,h=img.height*scale;
+  if(Math.abs(posX-w/2)<SNAP_DISTANCE) posX+=(w/2-posX)*MAGNET_STRENGTH;
+  if(Math.abs(posX-(canvas.width-w/2))<SNAP_DISTANCE) posX+=(canvas.width-w/2-posX)*MAGNET_STRENGTH;
+  if(Math.abs(posY-h/2)<SNAP_DISTANCE) posY+=(h/2-posY)*MAGNET_STRENGTH;
+  if(Math.abs(posY-(canvas.height-h/2))<SNAP_DISTANCE) posY+=(canvas.height-h/2-posY)*MAGNET_STRENGTH;
+}
+
+function snapCenter(){ posX=canvas.width/2; posY=canvas.height/2; draw(); }
+function snapTop(){ posY=(img.height*scale)/2; draw(); }
+function snapBottom(){ posY=canvas.height-(img.height*scale)/2; draw(); }
+function snapLeft(){ posX=(img.width*scale)/2; draw(); }
+function snapRight(){ posX=canvas.width-(img.width*scale)/2; draw(); }
+
+function scaleToWidth(){ scale=canvas.width/img.width; scaleSlider.value=scale; snapCenter(); }
+function scaleToHeight(){ scale=canvas.height/img.height; scaleSlider.value=scale; snapCenter(); }
+function scaleToCover(){ scale=Math.max(canvas.width/img.width,canvas.height/img.height); scaleSlider.value=scale; snapCenter(); }
+
+document.getElementById("bgSelect").addEventListener("change", e=>{ bgMode=e.target.value; draw(); });
+
+// ---------------- Export ----------------
+function sanitizePrefix(prefix){ return prefix.replace(/[^a-z0-9_-]/gi,""); }
+function getPrefixedName(prefix,baseName){ return prefix?`${prefix}_${baseName}`:baseName; }
+function exportImages(){
+  if(!img) return;
+  const rawPrefix=document.getElementById("filenamePrefix").value.trim();
+  const prefix=sanitizePrefix(rawPrefix);
+  const off=document.createElement("canvas");
+  off.width=canvas.width; off.height=canvas.height;
+  const octx=off.getContext("2d");
+  const w=img.width*scale, h=img.height*scale;
+  octx.drawImage(img,posX-w/2,posY-h/2,w,h);
+  saveCrop(off,0,0,640,480,getPrefixedName(prefix,"top.png"));
+  saveCrop(off,0,BOTTOM_Y,640,480,getPrefixedName(prefix,"bottom.png"));
+}
+function saveCrop(src,x,y,w,h,name){
+  const c=document.createElement("canvas"); c.width=w; c.height=h;
+  c.getContext("2d").drawImage(src,x,y,w,h,0,0,w,h);
+  const a=document.createElement("a"); a.href=c.toDataURL("image/png"); a.download=name; a.click();
+}
+
+// ---------------- Theme Handling ----------------
+const themeSelect=document.getElementById("themeSelect");
+const themes=["dark","light","blue","purple","yellow","snes","gameboy","retro-pink","neon-cyber"];
+
+function applyTheme(theme){
+  document.body.setAttribute("data-theme",theme);
+  themeSelect.value=theme;
+}
+
+let savedTheme=localStorage.getItem("dsWallpaperTheme");
+if(savedTheme && themes.includes(savedTheme)){ 
+  applyTheme(savedTheme); 
+} else { 
+  applyTheme(themes[Math.floor(Math.random()*themes.length)]); 
+}
+
+themeSelect.addEventListener("change", e=>{
+  applyTheme(e.target.value);
+  localStorage.setItem("dsWallpaperTheme",e.target.value);
+});
+
+draw();
+</script>
+
+</body>
+</html>
